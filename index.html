@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农事活动管理界面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2E7D32', // 主色调：绿色，代表农业、自然
+                        secondary: '#F57C00', // 辅助色：橙色，代表活力、阳光
+                        neutral: {
+                            100: '#F5F5F5',
+                            200: '#EEEEEE',
+                            300: '#E0E0E0',
+                            400: '#BDBDBD',
+                            500: '#9E9E9E',
+                            600: '#757575',
+                            700: '#616161',
+                            800: '#424242',
+                            900: '#212121',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                },
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-height {
+                transition: max-height 0.3s ease-in-out;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .form-input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply bg-white border border-primary text-primary hover:bg-primary/10 font-medium py-2 px-4 rounded-lg transition-all duration-200;
+            }
+            .btn-warning {
+                @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+            }
+            .card {
+                @apply bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden;
+            }
+            .badge {
+                @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-800 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo 和标题 -->
+                <div class="flex items-center">
+                    <i class="fa fa-leaf text-primary text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-neutral-800">农事活动管理界面</span>
+                </div>
+                
+                <!-- 导航链接 - 桌面端 -->
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#dashboard" class="text-primary font-medium border-b-2 border-primary px-1 py-5">首页</a>
+                    <a href="#activities" class="text-neutral-600 hover:text-primary transition-colors px-1 py-5">农事活动</a>
+                    <a href="#tasks" class="text-neutral-600 hover:text-primary transition-colors px-1 py-5">任务管理</a>
+                    <a href="#records" class="text-neutral-600 hover:text-primary transition-colors px-1 py-5">记录报表</a>
+                </nav>
+                
+                <!-- 用户信息和下拉菜单 -->
+                <div class="flex items-center">
+                    <div class="relative ml-3">
+                        <div class="flex items-center">
+                            <img class="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/id/1005/200/200" alt="用户头像">
+                            <span class="ml-2 text-sm font-medium hidden md:block">川芎药业</span>
+                            <i class="fa fa-chevron-down ml-1 text-xs text-neutral-500 hidden md:block"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- 移动端菜单按钮 -->
+                    <button type="button" class="ml-4 md:hidden text-neutral-500 hover:text-primary" id="mobile-menu-button">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 -->
+        <div class="md:hidden hidden bg-white border-t" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#dashboard" class="block px-3 py-2 rounded-md text-base font-medium text-primary bg-primary/10">首页</a>
+                <a href="#activities" class="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:text-primary hover:bg-primary/10">农事活动</a>
+                <a href="#tasks" class="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:text-primary hover:bg-primary/10">任务管理</a>
+                <a href="#records" class="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:text-primary hover:bg-primary/10">记录报表</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- 角色切换器 -->
+        <div class="mb-8 bg-white rounded-xl shadow-sm p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <span class="text-neutral-600 mr-3">当前角色：</span>
+                <div class="relative inline-block">
+                    <select id="role-selector" class="appearance-none bg-primary/10 text-primary font-medium rounded-lg py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="enterprise">企业端</option>
+                        <option value="farmer">农户端</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-primary">
+                        <i class="fa fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+            <button id="create-activity-btn" class="btn-primary flex items-center">
+                <i class="fa fa-plus mr-2"></i>发布农事活动
+            </button>
+        </div>
+        
+        <!-- 企业端仪表盘 -->
+        <div id="enterprise-dashboard" class="space-y-8">
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">待发布活动</p>
+                            <h3 class="text-3xl font-bold mt-1">12</h3>
+                            <p class="text-green-500 text-sm mt-2 flex items-center">
+                                <i class="fa fa-arrow-up mr-1"></i> 较上周 +3
+                            </p>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <i class="fa fa-file-text-o text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">进行中任务</p>
+                            <h3 class="text-3xl font-bold mt-1">8</h3>
+                            <p class="text-green-500 text-sm mt-2 flex items-center">
+                                <i class="fa fa-arrow-up mr-1"></i> 较上周 +2
+                            </p>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                            <i class="fa fa-spinner text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">待审核任务</p>
+                            <h3 class="text-3xl font-bold mt-1">5</h3>
+                            <p class="text-red-500 text-sm mt-2 flex items-center">
+                                <i class="fa fa-arrow-up mr-1"></i> 较上周 +1
+                            </p>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                            <i class="fa fa-check-circle-o text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">已完成任务</p>
+                            <h3 class="text-3xl font-bold mt-1">36</h3>
+                            <p class="text-green-500 text-sm mt-2 flex items-center">
+                                <i class="fa fa-arrow-up mr-1"></i> 较上周 +12
+                            </p>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <i class="fa fa-flag-checkered text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图表和最近活动 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 活动类型统计 -->
+                <div class="card p-6 lg:col-span-1">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold">农事活动类型分布</h3>
+                        <div class="text-sm text-neutral-500">本月</div>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="activityTypeChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 最近活动 -->
+                <div class="card p-6 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold">最近发布的农事活动</h3>
+                        <a href="#activities" class="text-primary text-sm hover:underline">查看全部</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-neutral-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">活动名称</th>
+                                    <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">批号</th>
+                                    <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">操作日期</th>
+                                    <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">状态</th>
+                                    <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-neutral-200">
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-neutral-900">绿源农业 人参 播种记录</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">GY-202306001</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">2023-06-15 至 2023-06-20</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="badge bg-yellow-100 text-yellow-800">待农户接单</span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <a href="#" class="text-primary hover:text-primary/80 mr-3">查看</a>
+                                        <a href="#" class="text-neutral-600 hover:text-neutral-900 mr-3">编辑</a>
+                                        <a href="#" class="text-red-500 hover:text-red-700">删除</a>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-neutral-900">绿源农业 当归 除草记录</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">GY-202306002</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">2023-06-18</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="badge bg-blue-100 text-blue-800">进行中</span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <a href="#" class="text-primary hover:text-primary/80 mr-3">查看</a>
+                                        <a href="#" class="text-neutral-600 hover:text-neutral-900">编辑</a>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-neutral-900">绿源农业 枸杞 施肥记录</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">GY-202306003</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-neutral-500">2023-06-20</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="badge bg-purple-100 text-purple-800">待审核</span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <a href="#" class="text-primary hover:text-primary/80 mr-3">查看</a>
+                                        <a href="#" class="text-secondary hover:text-secondary/80">审核</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 待审核任务 -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">待审核任务</h3>
+                    <a href="#tasks" class="text-primary text-sm hover:underline">查看全部</a>
+                </div>
+                <div class="space-y-4">
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 黄芪 灌溉记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306004 | 农户: 张三</p>
+                            </div>
+                            <div class="mt-3 md:mt-0">
+                                <span class="badge bg-purple-100 text-purple-800">待审核</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <img src="https://picsum.photos/id/133/120/80" alt="灌溉操作照片1" class="rounded-md h-20 object-cover">
+                            <img src="https://picsum.photos/id/134/120/80" alt="灌溉操作照片2" class="rounded-md h-20 object-cover">
+                        </div>
+                        <div class="mt-4 flex justify-end gap-3">
+                            <button class="btn-secondary">驳回</button>
+                            <button class="btn-primary">审核通过</button>
+                        </div>
+                    </div>
+                    
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 三七 虫害防治记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306005 | 农户: 李四</p>
+                            </div>
+                            <div class="mt-3 md:mt-0">
+                                <span class="badge bg-purple-100 text-purple-800">待审核</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <img src="https://picsum.photos/id/119/120/80" alt="虫害防治操作照片" class="rounded-md h-20 object-cover">
+                        </div>
+                        <div class="mt-4 flex justify-end gap-3">
+                            <button class="btn-secondary">驳回</button>
+                            <button class="btn-primary">审核通过</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 农户端仪表盘 -->
+        <div id="farmer-dashboard" class="hidden space-y-8">
+            <!-- 任务统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">待执行任务</p>
+                            <h3 class="text-3xl font-bold mt-1">4</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                            <i class="fa fa-tasks text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">进行中任务</p>
+                            <h3 class="text-3xl font-bold mt-1">2</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                            <i class="fa fa-spinner text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-neutral-500 text-sm">已完成任务</p>
+                            <h3 class="text-3xl font-bold mt-1">18</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <i class="fa fa-flag-checkered text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 待接单任务 -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">待接单任务</h3>
+                </div>
+                <div class="space-y-4">
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 人参 播种记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306001 | 操作日期: 2023-06-15 至 2023-06-20</p>
+                                <p class="text-sm mt-2">操作区域: 东地块A区 | 操作面积: 15亩</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center">
+                            <button class="text-neutral-600 hover:text-neutral-900 text-sm flex items-center" id="reject-task-btn">
+                                <i class="fa fa-times mr-1"></i> 拒绝接单
+                            </button>
+                            <div class="flex gap-3">
+                                <button class="btn-secondary">查看详情</button>
+                                <button class="btn-primary">确认接单</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 待执行任务 -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">待执行任务</h3>
+                    <a href="#tasks" class="text-primary text-sm hover:underline">查看全部</a>
+                </div>
+                <div class="space-y-4">
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 当归 除草记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306002 | 操作日期: 2023-06-18</p>
+                                <p class="text-sm mt-2">操作区域: 西地块B区 | 操作面积: 8亩</p>
+                            </div>
+                            <div>
+                                <span class="badge bg-blue-100 text-blue-800">待执行</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button class="btn-primary">开始执行</button>
+                        </div>
+                    </div>
+                    
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 枸杞 施肥记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306003 | 操作日期: 2023-06-20</p>
+                                <p class="text-sm mt-2">操作区域: 南地块C区 | 操作面积: 12亩</p>
+                            </div>
+                            <div>
+                                <span class="badge bg-blue-100 text-blue-800">待执行</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button class="btn-primary">开始执行</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 进行中任务 -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">进行中任务</h3>
+                </div>
+                <div class="space-y-4">
+                    <div class="border border-neutral-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                                <h4 class="font-medium">绿源农业 黄芪 灌溉记录</h4>
+                                <p class="text-sm text-neutral-500 mt-1">批号: GY-202306004 | 开始时间: 2023-06-16 08:30</p>
+                                <p class="text-sm mt-2">操作区域: 北地块A区 | 操作面积: 10亩</p>
+                            </div>
+                            <div>
+                                <span class="badge bg-secondary text-white">进行中</span>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-sm font-medium mb-2">上传操作照片（至少1张）</p>
+                            <div class="flex flex-wrap gap-3 mb-4">
+                                <div class="h-20 w-20 border-2 border-dashed border-neutral-300 rounded-md flex items-center justify-center text-neutral-400 hover:border-primary hover:text-primary cursor-pointer transition-colors">
+                                    <i class="fa fa-plus text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button class="btn-primary">完成任务</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 农事活动发布弹窗 -->
+    <div id="create-activity-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">发布农事活动</h3>
+                    <button id="close-modal-btn" class="text-neutral-500 hover:text-neutral-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- 活动类型选择 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">选择农事活动类型</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="sowing">
+                            <div class="flex items-center">
+                                <i class="fa fa-seedling text-primary mr-2"></i>
+                                <span>播种</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="weeding">
+                            <div class="flex items-center">
+                                <i class="fa fa-scissors text-primary mr-2"></i>
+                                <span>除草</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="fertilizing">
+                            <div class="flex items-center">
+                                <i class="fa fa-flask text-primary mr-2"></i>
+                                <span>施肥</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="transplanting">
+                            <div class="flex items-center">
+                                <i class="fa fa-arrows-alt text-primary mr-2"></i>
+                                <span>播种/移栽</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="seed-treatment">
+                            <div class="flex items-center">
+                                <i class="fa fa-vial text-primary mr-2"></i>
+                                <span>种苗处理</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="growth-regulator">
+                            <div class="flex items-center">
+                                <i class="fa fa-syringe text-primary mr-2"></i>
+                                <span>生长调节剂</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="irrigation">
+                            <div class="flex items-center">
+                                <i class="fa fa-tint text-primary mr-2"></i>
+                                <span>灌溉</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="disease-control">
+                            <div class="flex items-center">
+                                <i class="fa fa-bug text-primary mr-2"></i>
+                                <span>病害防治</span>
+                            </div>
+                        </div>
+                        <div class="activity-type-option border border-neutral-200 rounded-lg p-3 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors" data-type="pest-control">
+                            <div class="flex items-center">
+                                <i class="fa fa-shield text-primary mr-2"></i>
+                                <span>虫害防治</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 表单标题 -->
+                <div class="mb-6">
+                    <h3 id="form-title" class="text-lg font-semibold text-center py-2 border-y border-neutral-200">绿源农业 [药材名称] [农事活动类型]记录</h3>
+                </div>
+                
+                <!-- 基础信息 -->
+                <div class="mb-8">
+                    <h4 class="text-md font-medium mb-4 pb-2 border-b border-neutral-200">基础信息</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">批号 <span class="text-red-500">*</span></label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="唯一标识该批次农事活动">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">药材名称 <span class="text-red-500">*</span></label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="如：人参、当归等">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">操作日期 <span class="text-red-500">*</span></label>
+                            <div class="flex items-center gap-2">
+                                <input type="date" class="flex-1 rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                                <span class="text-neutral-500">至</span>
+                                <input type="date" class="flex-1 rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">操作区域 <span class="text-red-500">*</span></label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="明确具体田块、地块名称">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">操作面积（亩） <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="以亩为单位">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">操作农户 <span class="text-red-500">*</span></label>
+                            <select class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus appearance-none bg-white" id="farmer-select">
+                                <option value="">请选择农户</option>
+                                <option value="1">张三（东片区）</option>
+                                <option value="2">李四（西片区）</option>
+                                <option value="3">王五（南片区）</option>
+                                <option value="4">赵六（北片区）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">技术管理人员 <span class="text-red-500">*</span></label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="企业内部技术指导人员">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">质量管理人员 <span class="text-red-500">*</span></label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="企业内部质量把控人员">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 专属信息字段（根据活动类型动态显示） -->
+                <div id="specific-fields" class="mb-8 hidden">
+                    <h4 class="text-md font-medium mb-4 pb-2 border-b border-neutral-200">活动详情信息</h4>
+                    
+                    <!-- 播种专属字段 -->
+                    <div id="sowing-fields" class="specific-fields-content hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">种子品种 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">种子用量（kg/亩） <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.01" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">播种深度（cm） <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.1" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">播种方式 <span class="text-red-500">*</span></label>
+                                <select class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus appearance-none bg-white" id="sowing-method">
+                                    <option value="">请选择播种方式</option>
+                                    <option value="strip">条播</option>
+                                    <option value="broadcast">撒播</option>
+                                    <option value="hole">穴播</option>
+                                </select>
+                            </div>
+                            <div id="row-spacing-field" class="hidden">
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">行距（cm） <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.1" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div id="plant-spacing-field" class="hidden">
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">株距（cm） <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.1" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 除草专属字段 -->
+                    <div id="weeding-fields" class="specific-fields-content hidden">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">除草方式 <span class="text-red-500">*</span></label>
+                            <div class="flex flex-wrap gap-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="weeding-type" value="manual" class="form-radio text-primary focus:ring-primary">
+                                    <span class="ml-2">人工除草</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="weeding-type" value="mechanical" class="form-radio text-primary focus:ring-primary">
+                                    <span class="ml-2">机械除草</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="weeding-type" value="chemical" class="form-radio text-primary focus:ring-primary">
+                                    <span class="ml-2">化学除草</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="manual-weeding-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">作业工具 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="如：锄头、镰刀等">
+                            </div>
+                        </div>
+                        
+                        <div id="mechanical-weeding-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">除草机型号 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                        </div>
+                        
+                        <div id="chemical-weeding-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">除草剂名称 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">剂型 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">浓度 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-1">使用量 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="亩用量、稀释倍数等">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他活动类型的专属字段会在这里继续添加 -->
+                </div>
+                
+                <!-- 操作说明 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">操作说明 <span class="text-red-500">*</span></label>
+                    <textarea rows="4" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="填写该农事活动具体操作流程、技术要点、质量标准等内容"></textarea>
+                </div>
+                
+                <!-- 基地负责人意见 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">基地负责人意见</label>
+                    <textarea rows="2" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="基地负责人对该农事活动安排的审批意见"></textarea>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">负责人签字</label>
+                            <input type="text" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">日期</label>
+                            <input type="date" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-neutral-200 flex justify-end gap-3">
+                <button class="btn-secondary">保存草稿</button>
+                <button class="btn-primary">发布活动</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 拒绝接单原因弹窗 -->
+    <div id="reject-reason-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div class="p-6 border-b border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">拒绝接单原因</h3>
+                    <button id="close-reject-modal-btn" class="text-neutral-500 hover:text-neutral-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">请填写拒绝接单的原因 <span class="text-red-500">*</span></label>
+                    <textarea rows="4" class="w-full rounded-lg border border-neutral-300 py-2 px-3 text-sm form-input-focus" placeholder="请详细说明无法接单的原因"></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-neutral-200 flex justify-end gap-3">
+                <button class="btn-secondary" id="cancel-reject-btn">取消</button>
+                <button class="btn-warning">提交原因</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-neutral-200 py-6">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <i class="fa fa-leaf text-primary text-xl mr-2"></i>
+                    <span class="text-neutral-800 font-medium">农事活动管理界面</span>
+                </div>
+                <div class="text-sm text-neutral-500">
+                    © 2025 农事活动管理界面 版权所有
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 角色切换
+        document.getElementById('role-selector').addEventListener('change', function() {
+            const role = this.value;
+            if (role === 'enterprise') {
+                document.getElementById('enterprise-dashboard').classList.remove('hidden');
+                document.getElementById('farmer-dashboard').classList.add('hidden');
+                document.getElementById('create-activity-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('enterprise-dashboard').classList.add('hidden');
+                document.getElementById('farmer-dashboard').classList.remove('hidden');
+                document.getElementById('create-activity-btn').classList.add('hidden');
+            }
+        });
+        
+        // 农事活动发布弹窗
+        document.getElementById('create-activity-btn').addEventListener('click', function() {
+            document.getElementById('create-activity-modal').classList.remove('hidden');
+            // 重置表单状态
+            document.querySelectorAll('.activity-type-option').forEach(option => {
+                option.classList.remove('border-primary', 'bg-primary/5');
+            });
+            document.getElementById('specific-fields').classList.add('hidden');
+            document.querySelectorAll('.specific-fields-content').forEach(field => {
+                field.classList.add('hidden');
+            });
+        });
+        
+        // 关闭弹窗
+        document.getElementById('close-modal-btn').addEventListener('click', function() {
+            document.getElementById('create-activity-modal').classList.add('hidden');
+        });
+        
+        // 活动类型选择
+        document.querySelectorAll('.activity-type-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // 移除其他选项的选中状态
+                document.querySelectorAll('.activity-type-option').forEach(opt => {
+                    opt.classList.remove('border-primary', 'bg-primary/5');
+                });
+                
+                // 添加当前选项的选中状态
+                this.classList.add('border-primary', 'bg-primary/5');
+                
+                // 获取选中的活动类型
+                const type = this.getAttribute('data-type');
+                
+                // 显示专属字段区域
+                document.getElementById('specific-fields').classList.remove('hidden');
+                
+                // 隐藏所有活动类型的专属字段
+                document.querySelectorAll('.specific-fields-content').forEach(field => {
+                    field.classList.add('hidden');
+                });
+                
+                // 显示选中活动类型的专属字段
+                const fieldId = `${type}-fields`;
+                if (document.getElementById(fieldId)) {
+                    document.getElementById(fieldId).classList.remove('hidden');
+                }
+                
+                // 更新表单标题
+                const typeNames = {
+                    'sowing': '播种',
+                    'weeding': '除草',
+                    'fertilizing': '施肥',
+                    'transplanting': '播种/移栽',
+                    'seed-treatment': '种苗处理',
+                    'growth-regulator': '生长调节剂',
+                    'irrigation': '灌溉',
+                    'disease-control': '病害防治',
+                    'pest-control': '虫害防治'
+                };
+                document.getElementById('form-title').textContent = `绿源农业 [药材名称] ${typeNames[type]}记录`;
+            });
+        });
+        
+        // 播种方式选择逻辑
+        document.getElementById('sowing-method').addEventListener('change', function() {
+            const method = this.value;
+            const rowSpacingField = document.getElementById('row-spacing-field');
+            const plantSpacingField = document.getElementById('plant-spacing-field');
+            
+            rowSpacingField.classList.add('hidden');
+            plantSpacingField.classList.add('hidden');
+            
+            if (method === 'strip') {
+                rowSpacingField.classList.remove('hidden');
+            } else if (method === 'hole') {
+                rowSpacingField.classList.remove('hidden');
+                plantSpacingField.classList.remove('hidden');
+            }
+        });
+        
+        // 除草方式选择逻辑
+        document.querySelectorAll('input[name="weeding-type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const type = this.value;
+                
+                document.getElementById('manual-weeding-fields').classList.add('hidden');
+                document.getElementById('mechanical-weeding-fields').classList.add('hidden');
+                document.getElementById('chemical-weeding-fields').classList.add('hidden');
+                
+                if (type === 'manual') {
+                    document.getElementById('manual-weeding-fields').classList.remove('hidden');
+                } else if (type === 'mechanical') {
+                    document.getElementById('mechanical-weeding-fields').classList.remove('hidden');
+                } else if (type === 'chemical') {
+                    document.getElementById('chemical-weeding-fields').classList.remove('hidden');
+                }
+            });
+        });
+        
+        // 拒绝接单逻辑
+        document.getElementById('reject-task-btn').addEventListener('click', function() {
+            document.getElementById('reject-reason-modal').classList.remove('hidden');
+        });
+        
+        document.getElementById('close-reject-modal-btn').addEventListener('click', function() {
+            document.getElementById('reject-reason-modal').classList.add('hidden');
+        });
+        
+        document.getElementById('cancel-reject-btn').addEventListener('click', function() {
+            document.getElementById('reject-reason-modal').classList.add('hidden');
+        });
+        
+        // 农事活动类型分布图表
+        window.addEventListener('load', function() {
+            const ctx = document.getElementById('activityTypeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['播种', '除草', '施肥', '灌溉', '病虫害防治'],
+                    datasets: [{
+                        data: [15, 25, 20, 18, 22],
+                        backgroundColor: [
+                            '#2E7D32', // 主色调绿色
+                            '#F57C00', // 辅助色橙色
+                            '#1976D2', // 蓝色
+                            '#4CAF50', // 浅绿色
+                            '#FFC107'  // 黄色
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        });
+        
+        // 页面滚动时导航栏效果
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('shadow');
+            } else {
+                header.classList.remove('shadow');
+            }
+        });
+    </script>
+</body>
+</html>
